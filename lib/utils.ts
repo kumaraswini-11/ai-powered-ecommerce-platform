@@ -5,7 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-
 /**
  * Format a price amount with currency symbol
  * @param amount - The price amount (can be null/undefined)
@@ -14,8 +13,7 @@ export function cn(...inputs: ClassValue[]) {
  */
 export function formatPrice(
   amount: number | null | undefined,
-  currency = "£"
+  currency = "£",
 ): string {
   return `${currency}${(amount ?? 0).toFixed(2)}`;
 }
-

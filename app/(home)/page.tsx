@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { CategoryTiles } from "@/components/category-tiles";
 import { FeaturedCarousel } from "@/components/featured-carousel";
 import { FeaturedCarouselSkeleton } from "@/components/featured-carousel-skeleton";
+import { ProductSection } from "@/components/product-section";
 import { sanityFetch } from "@/sanity/lib/live";
 import { ALL_CATEGORIES_QUERY } from "@/sanity/queries/categories";
 import {
@@ -26,60 +27,55 @@ interface PageProps {
   }>;
 }
 
+/**
+ * Helper to determine which GROQ query to use based on sort params
+ */
+function getProductQuery(sort: string, searchQuery: string) {
+  if (searchQuery && sort === "relevance")
+    return FILTER_PRODUCTS_BY_RELEVANCE_QUERY;
+
+  const queryMap: Record<string, string> = {
+    price_asc: FILTER_PRODUCTS_BY_PRICE_ASC_QUERY,
+    price_desc: FILTER_PRODUCTS_BY_PRICE_DESC_QUERY,
+    relevance: FILTER_PRODUCTS_BY_RELEVANCE_QUERY,
+  };
+
+  return queryMap[sort] || FILTER_PRODUCTS_BY_NAME_QUERY;
+}
+
 export default async function HomePage({ searchParams }: PageProps) {
   const params = await searchParams;
 
+  // Normalize parameters
   const searchQuery = params.q ?? "";
   const categorySlug = params.category ?? "";
-  const color = params.color ?? "";
-  const material = params.material ?? "";
-  const minPrice = Number(params.minPrice) || 0;
-  const maxPrice = Number(params.maxPrice) || 0;
   const sort = params.sort ?? "name";
-  const inStock = params.inStock === "true";
 
-  // Select query based on sort parameter
-  const getQuery = () => {
-    // If searching and sort is relevance, use relevance query
-    if (searchQuery && sort === "relevance") {
-      return FILTER_PRODUCTS_BY_RELEVANCE_QUERY;
-    }
+  // 1. Parallel Fetching: Executes all requests at once instead of one-by-one
+  const [categoriesReq, productsReq, featuredReq] = await Promise.all([
+    sanityFetch({ query: ALL_CATEGORIES_QUERY }),
+    sanityFetch({
+      query: getProductQuery(sort, searchQuery),
+      params: {
+        searchQuery,
+        categorySlug,
+        color: params.color ?? "",
+        material: params.material ?? "",
+        minPrice: Number(params.minPrice) || 0,
+        maxPrice: Number(params.maxPrice) || 0,
+        inStock: params.inStock === "true",
+      },
+    }),
+    sanityFetch({ query: FEATURED_PRODUCTS_QUERY }),
+  ]);
 
-    switch (sort) {
-      case "price_asc":
-        return FILTER_PRODUCTS_BY_PRICE_ASC_QUERY;
-      case "price_desc":
-        return FILTER_PRODUCTS_BY_PRICE_DESC_QUERY;
-      case "relevance":
-        return FILTER_PRODUCTS_BY_RELEVANCE_QUERY;
-      default:
-        return FILTER_PRODUCTS_BY_NAME_QUERY;
-    }
-  };
+  const categories = categoriesReq.data;
+  const products = productsReq.data;
+  const featuredProducts = featuredReq.data;
 
-  // Fetch products with filters (server-side via GROQ)
-  const { data: products } = await sanityFetch({
-    query: getQuery(),
-    params: {
-      searchQuery,
-      categorySlug,
-      color,
-      material,
-      minPrice,
-      maxPrice,
-      inStock,
-    },
-  });
-
-  // Fetch categories for filter sidebar
-  const { data: categories } = await sanityFetch({
-    query: ALL_CATEGORIES_QUERY,
-  });
-
-  // Fetch featured products for carousel
-  const { data: featuredProducts } = await sanityFetch({
-    query: FEATURED_PRODUCTS_QUERY,
-  });
+  // 2. Find the actual category title for the heading
+  const activeCategory = categories.find((c) => c.slug === categorySlug);
+  const displayTitle = activeCategory?.title || "All Products";
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
@@ -94,7 +90,7 @@ export default async function HomePage({ searchParams }: PageProps) {
       <div className="border-b border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
         <div className="mx-auto max-w-7xl px-4 pt-8 sm:px-6 lg:px-8">
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Shop {categorySlug ? categorySlug : "All Products"}
+            Shop {displayTitle}
           </h1>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             Premium furniture for your home
@@ -105,17 +101,18 @@ export default async function HomePage({ searchParams }: PageProps) {
         <div className="mt-6">
           <CategoryTiles
             categories={categories}
-            activeCategory={categorySlug || undefined}
+            activeCategory={categorySlug}
           />
         </div>
       </div>
 
+      {/* Product Listing Section */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* <ProductSection
+        <ProductSection
           categories={categories}
           products={products}
           searchQuery={searchQuery}
-        /> */}
+        />
       </div>
     </div>
   );
