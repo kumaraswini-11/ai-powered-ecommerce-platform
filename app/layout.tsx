@@ -14,9 +14,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Store | Premium Furniture & Smart Shopping",
+  title: {
+    template: "%s | AI-Powered Store",
+    default: "AI-Powered Store | Intelligent Real-time E-commerce",
+  },
   description:
-    "Experience the future of furniture shopping with our AI-powered assistant and real-time inventory.",
+    "Experience the next generation of shopping with real-time inventory updates, personalized AI assistance, and a seamless secure checkout.",
 };
 
 export default function RootLayout({

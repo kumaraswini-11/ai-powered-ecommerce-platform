@@ -1,6 +1,5 @@
 # 🛒 AI-Powered Modern E-commerce Platform
 
-[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![Sanity](https://img.shields.io/badge/Sanity-v3-F03E2F?logo=sanity)](https://www.sanity.io/)
@@ -140,4 +139,4 @@ This platform is a full-stack demonstration of modern web capabilities. It bridg
 
 ## 📄 License
 
-This project is licensed under the **Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)**. It is intended for educational and demonstration purposes.
+This project is licensed under the **MIT License**. It is intended for educational and demonstration purposes.
