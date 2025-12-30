@@ -72,13 +72,25 @@ export function ProductSection({
             filtersOpen
               ? "w-full opacity-100 lg:w-72"
               : "hidden opacity-0 lg:hidden",
+            "lg:sticky lg:top-20 lg:self-start", // Sticky filters on desktop
           )}
         >
+          {/* Wrap filters in Suspense so the rest of the page 
+          stays interactive while URL states are being read.
+        */}
+          {/* <Suspense
+            fallback={
+              <div className="h-[400px] w-full animate-pulse rounded-2xl bg-zinc-100" />
+            }
+          > */}
           <ProductFilters categories={categories} />
+          {/* </Suspense> */}
         </aside>
 
         {/* Product Grid - expands to full width when filters hidden */}
-        <main className="flex-1"></main>
+        <main className="flex-1">
+          <ProductGrid products={products} />
+        </main>
       </div>
     </section>
   );

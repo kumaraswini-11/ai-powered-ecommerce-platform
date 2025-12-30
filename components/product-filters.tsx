@@ -1,8 +1,7 @@
 "use client";
 
 import { X, Search } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useQueryState, parseAsInteger, parseAsBoolean } from "nuqs";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,46 +24,65 @@ export function ProductFilters({
 }: {
   categories: ALL_CATEGORIES_QUERYResult;
 }) {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  // nuqs State Definitions
+  const [q, setQ] = useQueryState("q", { defaultValue: "", shallow: false });
+  const [category, setCategory] = useQueryState("category", {
+    defaultValue: "all",
+    shallow: false,
+  });
+  const [color, setColor] = useQueryState("color", {
+    defaultValue: "all",
+    shallow: false,
+  });
+  const [material, setMaterial] = useQueryState("material", {
+    defaultValue: "all",
+    shallow: false,
+  });
+  const [inStock, setInStock] = useQueryState(
+    "inStock",
+    parseAsBoolean.withDefault(false).withOptions({ shallow: false }),
+  );
+  const [sort, setSort] = useQueryState("sort", {
+    defaultValue: "name",
+    shallow: false,
+  });
 
-  // Derive initial price range from URL params
-  const urlMinPrice = Number(searchParams.get("minPrice")) || 0;
-  const urlMaxPrice = Number(searchParams.get("maxPrice")) || 5000;
-
-  // Price State
-  const [priceRange, setPriceRange] = useState<[number, number]>([
-    urlMinPrice,
-    urlMaxPrice,
-  ]);
-
-  const updateParams = (updates: Record<string, string | number | null>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    Object.entries(updates).forEach(([key, value]) => {
-      if (!value || value === "all" || value === 0) params.delete(key);
-      else params.set(key, String(value));
-    });
-
-    startTransition(() => {
-      router.push(`?${params.toString()}`, { scroll: false });
-    });
-  };
+  // Price states (nuqs handles string-to-number conversion)
+  const [minPrice, setMinPrice] = useQueryState(
+    "minPrice",
+    parseAsInteger.withDefault(0).withOptions({ shallow: false }),
+  );
+  const [maxPrice, setMaxPrice] = useQueryState(
+    "maxPrice",
+    parseAsInteger.withDefault(5000).withOptions({ shallow: false }),
+  );
 
   const activeFiltersCount = [
-    "q",
-    "category",
-    "color",
-    "material",
-    "inStock",
-    "minPrice",
-  ].filter((k) => searchParams.has(k)).length;
+    q,
+    category !== "all" ? category : null,
+    color !== "all" ? color : null,
+    material !== "all" ? material : null,
+    inStock ? "true" : null,
+    minPrice > 0 ? "true" : null,
+  ].filter(Boolean).length;
+
+  const handleClearAll = () => {
+    // Resetting to null removes the key from the URL
+    setQ(null);
+    setCategory(null);
+    setColor(null);
+    setMaterial(null);
+    setInStock(null);
+    setMinPrice(null);
+    setMaxPrice(null);
+    setSort(null);
+  };
 
   return (
     <div
       className={cn(
         "space-y-4 rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-950",
-        isPending && "opacity-70",
+        // isPending && "opacity-70",
       )}
     >
       {activeFiltersCount > 0 && (
@@ -75,7 +93,7 @@ export function ProductFilters({
           </p>
           <Button
             size="sm"
-            onClick={() => router.push("/", { scroll: false })}
+            onClick={handleClearAll}
             className="text-accent mt-1 w-full bg-amber-500 text-xs hover:bg-amber-600"
           >
             <X className="mr-1 size-3" /> Clear All
@@ -84,24 +102,19 @@ export function ProductFilters({
       )}
 
       {/* Search */}
-      <FilterSection
-        title="Search"
-        isActive={!!searchParams.get("q")}
-        onClear={() => updateParams({ q: null })}
-      >
+      <FilterSection title="Search" isActive={!!q} onClear={() => setQ(null)}>
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            updateParams({
-              q: new FormData(e.currentTarget).get("q") as string,
-            });
+            const formData = new FormData(e.currentTarget);
+            setQ(formData.get("q") as string);
           }}
           className="flex gap-1"
         >
           <Input
             name="q"
             placeholder="Search products..."
-            defaultValue={searchParams.get("q") ?? ""}
+            defaultValue={q}
             className="h-8 text-sm"
           />
           <Button
@@ -118,18 +131,14 @@ export function ProductFilters({
       {/* Category */}
       <FilterSection
         title="Category"
-        isActive={!!searchParams.get("category")}
-        onClear={() => updateParams({ category: null })}
+        isActive={category !== "all"}
+        onClear={() => setCategory(null)}
       >
-        <Select
-          value={searchParams.get("category") || "all"}
-          onValueChange={(v) => updateParams({ category: v })}
-        >
+        <Select value={category} onValueChange={(v) => setCategory(v)}>
           <SelectTrigger
             className={cn(
               "h-8 text-sm",
-              searchParams.get("category") &&
-                "border-amber-500 ring-1 ring-amber-500",
+              category !== "all" && "border-amber-500 ring-1 ring-amber-500",
             )}
           >
             <SelectValue placeholder="All Categories" />
@@ -148,18 +157,14 @@ export function ProductFilters({
       {/* Color Filter */}
       <FilterSection
         title="Color"
-        isActive={!!searchParams.get("color")}
-        onClear={() => updateParams({ color: null })}
+        isActive={color !== "all"}
+        onClear={() => setColor(null)}
       >
-        <Select
-          value={searchParams.get("color") || "all"}
-          onValueChange={(v) => updateParams({ color: v })}
-        >
+        <Select value={color} onValueChange={(v) => setColor(v)}>
           <SelectTrigger
             className={cn(
               "h-8 text-sm",
-              searchParams.get("color") &&
-                "border-amber-500 ring-1 ring-amber-500",
+              color !== "all" && "border-amber-500 ring-1 ring-amber-500",
             )}
           >
             <SelectValue placeholder="All Colors" />
@@ -178,18 +183,14 @@ export function ProductFilters({
       {/* Material Filter */}
       <FilterSection
         title="Material"
-        isActive={!!searchParams.get("material")}
-        onClear={() => updateParams({ material: null })}
+        isActive={material !== "all"}
+        onClear={() => setMaterial(null)}
       >
-        <Select
-          value={searchParams.get("material") || "all"}
-          onValueChange={(v) => updateParams({ material: v })}
-        >
+        <Select value={material} onValueChange={(v) => setMaterial(v)}>
           <SelectTrigger
             className={cn(
               "h-8 text-sm",
-              searchParams.get("material") &&
-                "border-amber-500 ring-1 ring-amber-500",
+              material !== "all" && "border-amber-500 ring-1 ring-amber-500",
             )}
           >
             <SelectValue placeholder="All Materials" />
@@ -207,19 +208,23 @@ export function ProductFilters({
 
       {/* Price Range */}
       <FilterSection
-        title={`Price: £${priceRange[0]} - £${priceRange[1]}`}
-        isActive={priceRange[0] > 0 || priceRange[1] < 5000}
-        onClear={() => updateParams({ minPrice: null, maxPrice: null })}
+        title={`Price: £${minPrice} - £${maxPrice}`}
+        isActive={minPrice > 0 || maxPrice < 5000}
+        onClear={() => {
+          setMinPrice(null);
+          setMaxPrice(null);
+        }}
       >
         <Slider
           min={0}
           max={5000}
           step={100}
-          value={priceRange}
-          onValueChange={(v) => setPriceRange(v as [number, number])}
-          onValueCommit={([min, max]) =>
-            updateParams({ minPrice: min, maxPrice: max })
-          }
+          value={[minPrice, maxPrice]}
+          onValueChange={([min, max]) => {
+            // Update local state is handled by nuqs hooks directly
+            setMinPrice(min);
+            setMaxPrice(max);
+          }}
           className="mt-2"
         />
       </FilterSection>
@@ -228,10 +233,8 @@ export function ProductFilters({
       <div className="flex items-center space-x-2">
         <Checkbox
           id="inStock"
-          checked={searchParams.get("inStock") === "true"}
-          onCheckedChange={(checked) =>
-            updateParams({ inStock: checked ? "true" : null })
-          }
+          checked={inStock}
+          onCheckedChange={(checked) => setInStock(!!checked)}
           className="text-amber-500 focus:ring-amber-500"
         />
         <label htmlFor="inStock" className="cursor-pointer text-sm font-medium">
@@ -244,10 +247,7 @@ export function ProductFilters({
         <span className="mb-1 block text-xs font-bold tracking-wider text-zinc-500 uppercase">
           Sort Results
         </span>
-        <Select
-          value={searchParams.get("sort") || "name"}
-          onValueChange={(v) => updateParams({ sort: v })}
-        >
+        <Select value={sort} onValueChange={(v) => setSort(v)}>
           <SelectTrigger className="h-8 text-sm">
             <SelectValue />
           </SelectTrigger>
