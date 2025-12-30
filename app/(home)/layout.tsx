@@ -1,10 +1,12 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
-import { Header } from "@/components/header";
+import { AppShell } from "@/components/app/app-shell";
+import { Header } from "@/components/app/header";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { CartStoreProvider } from "@/lib/store/cart-store-provider";
+import { ChatStoreProvider } from "@/lib/store/chat-store-provider";
 import { SanityLive } from "@/sanity/lib/live";
 
 export default function RootLayout({
@@ -21,14 +23,19 @@ export default function RootLayout({
         disableTransitionOnChange
       >
         <CartStoreProvider>
-          <NuqsAdapter>
-            <Header />
-            <main>{children}</main>
-            <Toaster position="bottom-center" />
+          <ChatStoreProvider>
+            <NuqsAdapter>
+              <AppShell>
+                <Header />
+                <main>{children}</main>
+              </AppShell>
 
-            {/* Sanity Live visual editing/real-time updates tool */}
-            <SanityLive />
-          </NuqsAdapter>
+              <Toaster position="bottom-center" />
+
+              {/* Sanity Live visual editing/real-time updates tool */}
+              <SanityLive />
+            </NuqsAdapter>
+          </ChatStoreProvider>
         </CartStoreProvider>
       </ThemeProvider>
     </ClerkProvider>

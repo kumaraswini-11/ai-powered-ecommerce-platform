@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 
-import { CategoryTiles } from "@/components/category-tiles";
-import { FeaturedCarousel } from "@/components/featured-carousel";
-import { FeaturedCarouselSkeleton } from "@/components/featured-carousel-skeleton";
-import { ProductSection } from "@/components/product-section";
+import { CategoryTiles } from "@/components/app/category-tiles";
+import { FeaturedCarousel } from "@/components/app/featured-carousel";
+import { FeaturedCarouselSkeleton } from "@/components/app/featured-carousel-skeleton";
+import { ProductSection } from "@/components/app/product-section";
 import { sanityFetch } from "@/sanity/lib/live";
 import { ALL_CATEGORIES_QUERY } from "@/sanity/queries/categories";
 import {

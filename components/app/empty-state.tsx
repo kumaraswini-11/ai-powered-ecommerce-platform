@@ -1,4 +1,7 @@
-import type { LucideIcon } from "lucide-react";
+"use client";
+
+import { type LucideIcon } from "lucide-react";
+import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -61,10 +64,12 @@ export function EmptyState({
   const ActionButton = action ? (
     action.href ? (
       <Button asChild className="mt-4">
-        <a href={action.href}>
-          {action.icon && <action.icon className="mr-2 h-4 w-4" />}
+        <Link href={action.href}>
+          {action.icon && (
+            <action.icon className="mr-2 size-4" aria-hidden="true" />
+          )}
           {action.label}
-        </a>
+        </Link>
       </Button>
     ) : (
       <Button
@@ -72,7 +77,9 @@ export function EmptyState({
         disabled={action.disabled}
         className="mt-4"
       >
-        {action.icon && <action.icon className="mr-2 h-4 w-4" />}
+        {action.icon && (
+          <action.icon className="mr-2 size-4" aria-hidden="true" />
+        )}
         {action.label}
       </Button>
     )
@@ -80,6 +87,7 @@ export function EmptyState({
 
   return (
     <div
+      role="status"
       className={cn(
         "flex flex-col items-center justify-center text-center",
         config.container,
@@ -92,7 +100,7 @@ export function EmptyState({
           config.iconWrapper,
         )}
       >
-        <Icon className={cn("text-zinc-400", config.icon)} />
+        <Icon className={cn("text-zinc-400", config.icon)} aria-hidden="true" />
       </div>
       <h2
         className={cn(

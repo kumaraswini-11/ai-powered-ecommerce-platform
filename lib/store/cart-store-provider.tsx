@@ -46,7 +46,8 @@ interface CartStoreProviderProps {
  *
  * - Creates exactly ONE store instance per provider
  * - Safe for Next.js App Router
- * - Prevents store recreation on re-renders (i.e. Manually triggers rehydration from localStorage on the client)
+ * - Prevents store recreation on re-renders
+ * - Manually triggers rehydration from localStorage on the client
  *
  * NOTE:
  * We do NOT create the store at module scope.

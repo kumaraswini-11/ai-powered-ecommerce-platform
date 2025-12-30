@@ -3,8 +3,8 @@
 import { PanelLeftClose, PanelLeft } from "lucide-react";
 import { useState } from "react";
 
-import { ProductFilters } from "@/components/product-filters";
-import { ProductGrid } from "@/components/product-grid";
+import { ProductFilters } from "@/components/app/product-filters";
+import { ProductGrid } from "@/components/app/product-grid";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type {
@@ -75,16 +75,7 @@ export function ProductSection({
             "lg:sticky lg:top-20 lg:self-start", // Sticky filters on desktop
           )}
         >
-          {/* Wrap filters in Suspense so the rest of the page 
-          stays interactive while URL states are being read.
-        */}
-          {/* <Suspense
-            fallback={
-              <div className="h-[400px] w-full animate-pulse rounded-2xl bg-zinc-100" />
-            }
-          > */}
           <ProductFilters categories={categories} />
-          {/* </Suspense> */}
         </aside>
 
         {/* Product Grid - expands to full width when filters hidden */}

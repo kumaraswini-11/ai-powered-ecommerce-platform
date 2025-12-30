@@ -1,14 +1,16 @@
 import { PackageSearch } from "lucide-react";
 
-import { EmptyState } from "@/components/empty-state";
-import { ProductCard } from "@/components/product-card";
+import { EmptyState } from "@/components/app/empty-state";
+import { ProductCard } from "@/components/app/product-card";
 import type { FILTER_PRODUCTS_BY_NAME_QUERYResult } from "@/sanity.types";
 
 interface ProductGridProps {
   products: FILTER_PRODUCTS_BY_NAME_QUERYResult;
 }
 
+// Displays a responsive grid of product cards. Shows an empty state when no products are found
 export function ProductGrid({ products }: ProductGridProps) {
+  // Empty state
   if (products.length === 0) {
     return (
       <div className="min-h-[400px] rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -22,6 +24,7 @@ export function ProductGrid({ products }: ProductGridProps) {
     );
   }
 
+  // Responsive product grid
   return (
     <div className="@container">
       <div className="grid grid-cols-1 gap-6 @md:grid-cols-2 @md:gap-8 @xl:grid-cols-3 @6xl:grid-cols-4">

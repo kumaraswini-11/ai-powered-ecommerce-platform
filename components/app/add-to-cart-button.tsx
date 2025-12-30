@@ -16,6 +16,13 @@ interface AddToCartButtonProps {
   className?: string;
 }
 
+/**
+ * AddToCartButton
+ *
+ * - Handles adding/removing products to/from cart
+ * - Supports quantity controls if the product is already in the cart
+ * - Shows proper disabled/out-of-stock states
+ */
 export function AddToCartButton({
   productId,
   name,
@@ -31,20 +38,22 @@ export function AddToCartButton({
   const isOutOfStock = stock <= 0;
   const isAtMax = quantityInCart >= stock;
 
+  // Add one item to cart
   const handleAdd = () => {
-    if (quantityInCart < stock) {
+    if (!isAtMax) {
       addItem({ productId, name, price, image }, 1);
       toast.success(`Added ${name}`);
     }
   };
 
+  // Remove one item from cart
   const handleDecrement = () => {
     if (quantityInCart > 0) {
       updateQuantity(productId, quantityInCart - 1);
     }
   };
 
-  // Out of stock
+  // Out of stock state
   if (isOutOfStock) {
     return (
       <Button
@@ -57,11 +66,11 @@ export function AddToCartButton({
     );
   }
 
-  // Not in cart - show Add to Basket button
+  // Not in cart - show Add to Basket
   if (quantityInCart === 0) {
     return (
       <Button onClick={handleAdd} className={cn("h-11 w-full", className)}>
-        <ShoppingBag className="mr-2 h-4 w-4" />
+        <ShoppingBag className="mr-2 size-4" />
         Add to Basket
       </Button>
     );
@@ -81,11 +90,13 @@ export function AddToCartButton({
         className="h-full flex-1 rounded-r-none"
         onClick={handleDecrement}
       >
-        <Minus className="h-4 w-4" />
+        <Minus className="size-4" />
       </Button>
+
       <span className="flex-1 text-center text-sm font-semibold tabular-nums">
         {quantityInCart}
       </span>
+
       <Button
         variant="ghost"
         size="icon"
@@ -93,7 +104,7 @@ export function AddToCartButton({
         onClick={handleAdd}
         disabled={isAtMax}
       >
-        <Plus className="h-4 w-4" />
+        <Plus className="size-4" />
       </Button>
     </div>
   );
