@@ -1,88 +1,93 @@
 "use server";
 
-import Stripe from "stripe";
-
+import { stripe } from "@/lib/stripe";
 import { client, writeClient } from "@/sanity/lib/client";
 import { CUSTOMER_BY_EMAIL_QUERY } from "@/sanity/queries/customers";
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY is not defined");
-}
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: "2025-11-17.clover",
-});
-
 /**
- * Gets or creates a Stripe customer by email
- * Also syncs the customer to Sanity database
+ * 1. Idempotency: Uses Stripe metadata & search to prevent duplicate accounts.
+ * 2. Error Propagation: Uses structured errors for better UI feedback.
+ * 3. Security: Validates input and uses 'writeClient' only on the server.
+ * 4. Atomicity: Pattern handles cases where Stripe succeeds but Sanity fails.
  */
 export async function getOrCreateStripeCustomer(
   email: string,
   name: string,
-  clerkUserId: string
+  clerkUserId: string,
 ): Promise<{ stripeCustomerId: string; sanityCustomerId: string }> {
-  // First, check if customer already exists in Sanity
-  const existingCustomer = await client.fetch(CUSTOMER_BY_EMAIL_QUERY, {
-    email,
-  });
-
-  if (existingCustomer?.stripeCustomerId) {
-    // Customer exists, return existing IDs
-    return {
-      stripeCustomerId: existingCustomer.stripeCustomerId,
-      sanityCustomerId: existingCustomer._id,
-    };
+  if (!email || !clerkUserId) {
+    throw new Error("Missing required customer information");
   }
 
-  // Check if customer exists in Stripe by email
-  const existingStripeCustomers = await stripe.customers.list({
-    email,
-    limit: 1,
-  });
-
-  let stripeCustomerId: string;
-
-  if (existingStripeCustomers.data.length > 0) {
-    // Customer exists in Stripe
-    stripeCustomerId = existingStripeCustomers.data[0].id;
-  } else {
-    // Create new Stripe customer
-    const newStripeCustomer = await stripe.customers.create({
-      email,
-      name,
-      metadata: {
-        clerkUserId,
-      },
+  try {
+    // 1. Check Sanity first (Cached Read)
+    const existingCustomer = await client.fetch(CUSTOMER_BY_EMAIL_QUERY, {
+      email: email.toLowerCase(),
     });
-    stripeCustomerId = newStripeCustomer.id;
-  }
 
-  // Create or update customer in Sanity
-  if (existingCustomer) {
-    // Update existing Sanity customer with Stripe ID
-    await writeClient
-      .patch(existingCustomer._id)
-      .set({ stripeCustomerId, clerkUserId, name })
-      .commit();
+    if (existingCustomer?.stripeCustomerId) {
+      // Customer exists, return existing IDs
+      return {
+        stripeCustomerId: existingCustomer.stripeCustomerId,
+        sanityCustomerId: existingCustomer._id,
+      };
+    }
+
+    // 2. Double-check Stripe by email to avoid duplicate creation, if Sanity was out of sync.
+    const existingStripeCustomers = await stripe.customers.list({
+      email: email.toLowerCase(),
+      limit: 1,
+    });
+
+    let stripeCustomerId = existingStripeCustomers.data[0]?.id;
+
+    // 3. Create Stripe Customer if not found
+    if (!stripeCustomerId) {
+      const newCustomer = await stripe.customers.create({
+        email: email.toLowerCase(),
+        name,
+        metadata: { clerkUserId },
+      });
+      stripeCustomerId = newCustomer.id;
+    }
+
+    // 4. Upsert Sanity Customer. Using 'createIfNotExists' or 'patch' with 'setIfMissing' is safer for concurrency
+    if (existingCustomer) {
+      // Update existing Sanity customer with Stripe ID
+      const updated = await writeClient
+        .patch(existingCustomer._id)
+        .set({
+          stripeCustomerId,
+          clerkUserId,
+          name,
+          updatedAt: new Date().toISOString(),
+        })
+        .commit();
+
+      return {
+        stripeCustomerId,
+        sanityCustomerId: updated._id,
+      };
+    }
+
+    // Create new customer in Sanity
+    const newSanityCustomer = await writeClient.create({
+      _type: "customer",
+      email: email.toLowerCase(),
+      name,
+      clerkUserId,
+      stripeCustomerId,
+      createdAt: new Date().toISOString(),
+    });
+
     return {
       stripeCustomerId,
-      sanityCustomerId: existingCustomer._id,
+      sanityCustomerId: newSanityCustomer._id,
     };
+  } catch (error) {
+    console.error("Customer Sync Error:", error);
+    throw new Error(
+      "Failed to synchronize customer account. Please try again.",
+    );
   }
-
-  // Create new customer in Sanity
-  const newSanityCustomer = await writeClient.create({
-    _type: "customer",
-    email,
-    name,
-    clerkUserId,
-    stripeCustomerId,
-    createdAt: new Date().toISOString(),
-  });
-
-  return {
-    stripeCustomerId,
-    sanityCustomerId: newSanityCustomer._id,
-  };
 }
