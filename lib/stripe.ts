@@ -2,7 +2,11 @@ import "server-only"; // Prevents this file from being imported in client compon
 import Stripe from "stripe";
 
 if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error("STRIPE_SECRET_KEY is missing in environment variables");
+  throw new Error("STRIPE_SECRET_KEY is not defined");
+}
+
+if (!process.env.STRIPE_WEBHOOK_SECRET) {
+  throw new Error("STRIPE_WEBHOOK_SECRET is not defined");
 }
 
 /**

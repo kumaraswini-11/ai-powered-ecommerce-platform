@@ -1,6 +1,6 @@
 "use client";
 
-import { type LucideIcon } from "lucide-react";
+import { Package, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface EmptyStateProps {
   /** Lucide icon to display */
-  icon: LucideIcon;
+  icon?: LucideIcon;
   /** Main title text */
   title: string;
   /** Description text (optional) */
@@ -31,28 +31,28 @@ const sizeConfig = {
   sm: {
     container: "py-8",
     iconWrapper: "h-12 w-12 mb-3",
-    icon: "h-6 w-6",
+    icon: "size-6",
     title: "text-base",
     description: "text-xs mt-1",
   },
   default: {
     container: "py-16",
     iconWrapper: "h-16 w-16 mb-4",
-    icon: "h-8 w-8",
+    icon: "size-8",
     title: "text-lg",
     description: "text-sm mt-1",
   },
   lg: {
     container: "py-20",
     iconWrapper: "h-20 w-20 mb-5",
-    icon: "h-10 w-10",
+    icon: "size-10",
     title: "text-xl",
     description: "text-base mt-2",
   },
 };
 
 export function EmptyState({
-  icon: Icon,
+  icon: Icon = Package,
   title,
   description,
   action,
@@ -94,14 +94,19 @@ export function EmptyState({
         className,
       )}
     >
-      <div
-        className={cn(
-          "flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800",
-          config.iconWrapper,
-        )}
-      >
-        <Icon className={cn("text-zinc-400", config.icon)} aria-hidden="true" />
-      </div>
+      {Icon && (
+        <div
+          className={cn(
+            "flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800",
+            config.iconWrapper,
+          )}
+        >
+          <Icon
+            className={cn("text-zinc-400", config.icon)}
+            aria-hidden="true"
+          />
+        </div>
+      )}
       <h2
         className={cn(
           "font-semibold text-zinc-900 dark:text-zinc-100",

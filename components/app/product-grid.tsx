@@ -1,5 +1,3 @@
-import { PackageSearch } from "lucide-react";
-
 import { EmptyState } from "@/components/app/empty-state";
 import { ProductCard } from "@/components/app/product-card";
 import type { FILTER_PRODUCTS_BY_NAME_QUERYResult } from "@/sanity.types";
@@ -15,7 +13,7 @@ export function ProductGrid({ products }: ProductGridProps) {
     return (
       <div className="min-h-[400px] rounded-2xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-900/50">
         <EmptyState
-          icon={PackageSearch}
+          // icon={PackageSearch}
           title="No products found"
           description="Try adjusting your search or filters to find what you're looking for"
           size="lg"

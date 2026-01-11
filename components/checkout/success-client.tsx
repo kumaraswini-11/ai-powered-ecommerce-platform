@@ -11,22 +11,25 @@ import { formatPrice } from "@/lib/utils";
 interface SuccessClientProps {
   session: {
     id: string;
-    customerEmail?: string | null;
-    customerName?: string | null;
-    amountTotal?: number | null;
-    paymentStatus: string;
-    shippingAddress?: {
-      line1?: string | null;
-      line2?: string | null;
-      city?: string | null;
-      state?: string | null;
-      postal_code?: string | null;
-      country?: string | null;
-    } | null;
-    lineItems?: {
+    status: string;
+    customer?: {
+      email?: string | null;
       name?: string | null;
+      address?: {
+        // shipping address
+        line1?: string | null;
+        line2?: string | null;
+        city?: string | null;
+        state?: string | null;
+        postal_code?: string | null;
+        country?: string | null;
+      } | null;
+    } | null;
+    amount?: number | null;
+    items?: {
+      description?: string | null;
       quantity?: number | null;
-      amount: number;
+      amount_total?: number | null;
     }[];
   };
 }
@@ -47,19 +50,19 @@ export function SuccessClient({ session }: SuccessClientProps) {
     hasClearedCartRef.current = true;
   }, [clearCart]);
 
-  const address = session.shippingAddress;
+  const address = session.customer?.address;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6 lg:px-8">
       {/* Confirmation Header */}
       <div className="text-center">
-        <CheckCircle className="mx-auto h-16 w-16 text-green-500" />
+        <CheckCircle className="mx-auto size-16 text-green-500" />
         <h1 className="mt-4 text-3xl font-bold text-zinc-900 dark:text-zinc-100">
           Order Confirmed!
         </h1>
         <p aria-live="polite" className="mt-2 text-zinc-600 dark:text-zinc-400">
           Thank you for your purchase. We&apos;ve sent a confirmation to{" "}
-          <span className="font-medium">{session.customerEmail}</span>
+          <span className="font-medium">{session.customer?.email}</span>
         </p>
       </div>
 
@@ -73,18 +76,18 @@ export function SuccessClient({ session }: SuccessClientProps) {
 
         <div className="px-6 py-4">
           {/* Line Items */}
-          {session.lineItems && session.lineItems.length > 0 && (
+          {session.items && session.items.length > 0 && (
             <div className="space-y-3">
-              {session.lineItems.map((item, index) => (
+              {session.items.map((item, index) => (
                 <div
-                  key={`${item.name}-${index}`}
+                  key={`${item.description}-${index}`}
                   className="flex justify-between text-sm"
                 >
                   <span className="text-zinc-600 dark:text-zinc-400">
-                    {item.name} × {item.quantity}
+                    {item.description} × {item.quantity}
                   </span>
                   <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                    {formatPrice(item.amount / 100)}
+                    {formatPrice(((item.amount_total ?? 0) as number) / 100)}
                   </span>
                 </div>
               ))}
@@ -96,7 +99,7 @@ export function SuccessClient({ session }: SuccessClientProps) {
             <div className="flex justify-between text-base font-semibold">
               <span className="text-zinc-900 dark:text-zinc-100">Total</span>
               <span className="text-zinc-900 dark:text-zinc-100">
-                {formatPrice((session.amountTotal ?? 0) / 100)}
+                {formatPrice(((session.amount ?? 0) as number) / 100)}
               </span>
             </div>
           </div>
@@ -109,7 +112,7 @@ export function SuccessClient({ session }: SuccessClientProps) {
               Shipping to
             </h3>
             <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              {session.customerName && <p>{session.customerName}</p>}
+              {session.customer?.name && <p>{session.customer.name}</p>}
               {address.line1 && <p>{address.line1}</p>}
               {address.line2 && <p>{address.line2}</p>}
               <p>
@@ -125,11 +128,11 @@ export function SuccessClient({ session }: SuccessClientProps) {
         {/* Payment Status */}
         <div className="border-t border-zinc-200 px-6 py-4 dark:border-zinc-800">
           <div className="flex items-center gap-2">
-            <Package className="h-5 w-5 text-zinc-400" />
+            <Package className="size-5 text-zinc-400" />
             <span className="text-sm text-zinc-600 dark:text-zinc-400">
               Payment status:{" "}
               <span className="font-medium text-green-600 capitalize">
-                {session.paymentStatus}
+                {session.status}
               </span>
             </span>
           </div>
@@ -141,7 +144,7 @@ export function SuccessClient({ session }: SuccessClientProps) {
         <Button asChild variant="outline">
           <Link href="/orders">
             View Your Orders
-            <ArrowRight className="ml-2 h-4 w-4" />
+            <ArrowRight className="ml-2 size-4" />
           </Link>
         </Button>
         <Button asChild>
